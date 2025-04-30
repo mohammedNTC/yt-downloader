@@ -137,16 +137,41 @@ def download_youtube_music(url):
 
 def download_youtube_video(url):
     try:
+        # Step 1: Get available formats without downloading
+        with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+            info_dict = ydl.extract_info(url, download=False)
+            formats = info_dict.get('formats', [])
+
+        # Step 2: Filter and display video formats
+        video_formats = [f for f in formats if f.get('vcodec') != 'none']
+        
+        print("\nAvailable Video Formats:")
+        for idx, fmt in enumerate(video_formats, 1):
+            res = fmt.get('resolution', 'N/A')
+            fps = fmt.get('fps', '')
+            audio_status = " (No Audio)" if fmt.get('acodec') == 'none' else ""
+            print(f"{idx}. {res} {fps}fps | {fmt['ext']} | {fmt['format_note']}{audio_status}")
+
+        # Step 3: Let user select format
+        choice = int(input("\nEnter the number of the quality you want: ")) - 1
+        selected_format = video_formats[choice]
+        
+        # Step 4: Auto-combine with audio if needed
+        format_spec = selected_format['format_id']
+        if selected_format.get('acodec') == 'none':
+            format_spec += '+bestaudio'
+
+        # Step 5: Download with selected format
         ydl_opts = {
-            'format': 'bestvideo+bestaudio/best',
+            'format': format_spec,
             'merge_output_format': 'mp4',
             'outtmpl': '%(title)s.%(ext)s',
         }
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info_dict = ydl.extract_info(url, download=True)
-            print(f"Title: {info_dict.get('title', 'Unknown Title')}")
-            print(f"Download completed! File saved as {info_dict.get('title', 'Unknown Title')}.{info_dict.get('ext', 'mp4')}")
+            ydl.download([url])
+            
+        print(f"\nDownload complete! Saved as {info_dict.get('title', 'Unknown')}.mp4")
 
     except Exception as e:
         print(f"An error occurred: {e}")
