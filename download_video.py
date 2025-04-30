@@ -137,22 +137,30 @@ def download_youtube_music(url):
 
 def download_youtube_video(url):
     try:
-        # Step 1: Get available formats without downloading
         with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
             info_dict = ydl.extract_info(url, download=False)
             formats = info_dict.get('formats', [])
 
-        # Step 2: Filter and display video formats
         video_formats = [f for f in formats if f.get('vcodec') != 'none']
         
         print("\nAvailable Video Formats:")
         for idx, fmt in enumerate(video_formats, 1):
+            # Handle potential missing fields
             res = fmt.get('resolution', 'N/A')
             fps = fmt.get('fps', '')
+            ext = fmt.get('ext', 'unknown')
+            format_note = fmt.get('format_note', '')
             audio_status = " (No Audio)" if fmt.get('acodec') == 'none' else ""
-            print(f"{idx}. {res} {fps}fps | {fmt['ext']} | {fmt['format_note']}{audio_status}")
+            
+            # Build format description
+            desc_parts = []
+            if res: desc_parts.append(res)
+            if fps: desc_parts.append(f"{fps}fps")
+            desc_parts.append(ext)
+            if format_note: desc_parts.append(format_note)
+            
+            print(f"{idx}. {' | '.join(desc_parts)}{audio_status}")
 
-        # Step 3: Let user select format
         choice = int(input("\nEnter the number of the quality you want: ")) - 1
         selected_format = video_formats[choice]
         
