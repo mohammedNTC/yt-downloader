@@ -145,14 +145,12 @@ def download_youtube_video(url):
         
         print("\nAvailable Video Formats:")
         for idx, fmt in enumerate(video_formats, 1):
-            # Handle potential missing fields
             res = fmt.get('resolution', 'N/A')
             fps = fmt.get('fps', '')
             ext = fmt.get('ext', 'unknown')
             format_note = fmt.get('format_note', '')
             audio_status = " (No Audio)" if fmt.get('acodec') == 'none' else ""
             
-            # Build format description
             desc_parts = []
             if res: desc_parts.append(res)
             if fps: desc_parts.append(f"{fps}fps")
@@ -164,16 +162,19 @@ def download_youtube_video(url):
         choice = int(input("\nEnter the number of the quality you want: ")) - 1
         selected_format = video_formats[choice]
         
-        # Step 4: Auto-combine with audio if needed
+        # Auto-combine with best audio if needed
         format_spec = selected_format['format_id']
         if selected_format.get('acodec') == 'none':
-            format_spec += '+bestaudio'
-
-        # Step 5: Download with selected format
+            format_spec += '+bestaudio/best'
+            
         ydl_opts = {
             'format': format_spec,
             'merge_output_format': 'mp4',
             'outtmpl': '%(title)s.%(ext)s',
+            'postprocessors': [{
+                'key': 'FFmpegVideoConvertor',
+                'preferedformat': 'mp4'
+            }]
         }
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
